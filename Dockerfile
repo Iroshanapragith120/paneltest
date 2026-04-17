@@ -12,5 +12,5 @@ RUN apt-get update && apt-get install -y \
 # Terminal එක වැඩ කරන Port එක (7681 තමයි ttyd default පාවිච්චි කරන්නේ)
 EXPOSE 7681
 
-# Docker එක run කරපු ගමන් ttyd හරහා bash terminal එක පටන් ගන්න
-CMD ["ttyd", "-p", "7681", "bash"]
+# Replit එකට ගැලපෙන විදිහට ttyd run කිරීම
+CMD ["ttyd", "-p", "8080", "-i", "0.0.0.0", "bash"]
