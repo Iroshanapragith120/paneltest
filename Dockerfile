@@ -1,16 +1,20 @@
-# Ubuntu 24.04 පදනම් කරගත් image එක
+# Ubuntu 24.04 පාවිච්චි කරමු
 FROM ubuntu:24.04
 
 # අත්‍යවශ්‍ය ටූල්ස් ඉන්ස්ටෝල් කිරීම
 RUN apt-get update && apt-get install -y \
-    ttyd \
-    bash \
     curl \
-    vim \
+    wget \
+    bash \
+    sudo \
     && rm -rf /var/lib/apt/lists/*
 
-# Terminal එක වැඩ කරන Port එක (7681 තමයි ttyd default පාවිච්චි කරන්නේ)
-EXPOSE 7681
+# 3x-ui ඉන්ස්ටෝල් කරන ස්ක්‍රිප්ට් එක රන් කිරීම
+# මේකෙදි අපි -s (silent) සහ auto-install පාවිච්චි කරනවා
+RUN curl -Ls https://raw.githubusercontent.com/mhzm/3x-ui/master/install.sh | bash -s -- -y
 
-# Replit එකට ගැලපෙන විදිහට ttyd run කිරීම
-CMD ["ttyd", "-p", "8080", "-i", "0.0.0.0", "bash"]
+# පැනල් එකේ Default Port එක 2053 (මේක Replit එකේදී 8080 ට Map කරන්න වෙයි)
+EXPOSE 2053
+
+# පැනල් එක පණගන්වා තබා ගැනීමට
+CMD ["/usr/local/x-ui/x-ui", "start"]
