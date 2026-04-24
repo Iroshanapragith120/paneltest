@@ -22,7 +22,7 @@ RUN mkdir -p /root/.vnc && \
 RUN echo '#!/bin/bash\n\
 rm -rf /tmp/.X*\n\
 vncserver :1 -geometry 1280x720 -depth 24\n\
-ngrok config add-authtoken <YOUR_NGROK_AUTH_TOKEN>\n\
+ngrok config add-authtoken <3Cfmh77c1MIqFU6HzicO0QAPVb6_54eWAVPovCk2Q9JJhAmt5>\n\
 ngrok tcp 5901' > /entrypoint.sh && chmod +x /entrypoint.sh
 
 CMD ["/bin/bash", "/entrypoint.sh"]
