@@ -1,25 +1,30 @@
-FROM ubuntu:24.04
+FROM ubuntu:22.04
 
-# අත්‍යවශ්‍ය ටූල්ස් ඉන්ස්ටෝල් කිරීම
-RUN apt-get update && apt-get install -y \
-    curl \
-    wget \
-    bash \
-    sudo \
-    && rm -rf /var/lib/apt/lists/*
+# ENV variables set කිරීම
+ENV DEBIAN_FRONTEND=noninteractive
+ENV DISPLAY=:1
 
-# 3x-ui ඉන්ස්ටෝල් කරන එක
-RUN curl -Ls https://raw.githubusercontent.com/mhzm/3x-ui/master/install.sh | bash -s -- -y
+# අවශ්‍ය ටූල්ස් ඉන්ස්ටෝල් කිරීම
+RUN apt update && apt install -y \
+    xfce4 xfce4-goodies \
+    tightvncserver \
+    novnc websockify \
+    firefox \
+    curl wget && \
+    apt clean
 
-# පැනල් එකේ විස්තර කමාන්ඩ් එකෙන් සෙට් කරනවා
-# Username: admin123
-# Password: password123
-# Port: 8080 (Replit එකට ලේසි වෙන්න)
-RUN /usr/local/x-ui/x-ui setting -username admin123 -password password123
-RUN /usr/local/x-ui/x-ui setting -port 8080
+# VNC Password එක සෙට් කිරීම (මෙහි පාස්වර්ඩ් එක 123456)
+RUN mkdir -p ~/.vnc && \
+    echo "123456" | vncpasswd -f > ~/.vnc/passwd && \
+    chmod 600 ~/.vnc/passwd
 
-# Replit එක පෝට් එක අඳුරගන්න
+# Startup Script එක ලිවීම
+RUN echo "#!/bin/bash\n\
+vncserver :1 -geometry 1280x720 -depth 24\n\
+websockify --web /usr/share/novnc/ 8080 localhost:5901\n" > /start.sh && \
+    chmod +x /start.sh
+
+# Railway එකේ PORT එක open කිරීම
 EXPOSE 8080
 
-# පැනල් එක රන් කිරීම
-CMD ["/usr/local/x-ui/x-ui"]
+CMD ["/start.sh"]
