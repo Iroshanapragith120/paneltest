@@ -1,15 +1,12 @@
 FROM debian:11
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV USER=root
 
-# Ngrok සහ Desktop එක ඉන්ස්ටෝල් කිරීම
+# අත්‍යවශ්‍ය දේවල් සහ Tmate ඉන්ස්ටෝල් කිරීම
 RUN apt update && apt install -y \
     xfce4 xfce4-terminal tightvncserver \
     wget curl ca-certificates firefox-esr \
-    && wget https://bin.equinox.io/c/b342Pmq6Ez7/ngrok-v3-stable-linux-amd64.tgz \
-    && tar -xvzf ngrok-v3-stable-linux-amd64.tgz \
-    && mv ngrok /usr/bin/ngrok \
+    tmate dbus-x11 \
     && apt clean
 
 # VNC Password (123456)
@@ -18,11 +15,14 @@ RUN mkdir -p /root/.vnc && \
     chmod 600 /root/.vnc/passwd
 
 # Startup Script
-# මෙතන <YOUR_NGROK_AUTH_TOKEN> වෙනුවට උඹේ Token එක දාපන්
 RUN echo '#!/bin/bash\n\
 rm -rf /tmp/.X*\n\
 vncserver :1 -geometry 1280x720 -depth 24\n\
-ngrok config add-authtoken <3Cfmh77c1MIqFU6HzicO0QAPVb6_54eWAVPovCk2Q9JJhAmt5>\n\
-ngrok tcp 5901' > /entrypoint.sh && chmod +x /entrypoint.sh
+# Tmate පණගන්වනවා ලෝකේ ඕනෑම තැනක ඉඳන් ලොග් වෙන්න\n\
+tmate -S /tmp/tmate.sock new-session -d\n\
+tmate -S /tmp/tmate.sock wait tmate-ready\n\
+tmate -S /tmp/tmate.sock display -p "#{tmate_ssh}"\n\
+tail -f /dev/null' > /entrypoint.sh && chmod +x /entrypoint.sh
 
+EXPOSE 8080
 CMD ["/bin/bash", "/entrypoint.sh"]
