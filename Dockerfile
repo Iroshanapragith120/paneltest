@@ -2,27 +2,30 @@ FROM debian:11
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# අත්‍යවශ්‍ය දේවල් සහ Tmate ඉන්ස්ටෝල් කිරීම
+# අවශ්‍ය ටූල්ස් සහ 3X-UI ඉන්ස්ටෝල් කිරීම
 RUN apt update && apt install -y \
-    xfce4 xfce4-terminal tightvncserver \
-    wget curl ca-certificates firefox-esr \
-    tmate dbus-x11 \
+    curl wget sudo procps ca-certificates socat \
+    && bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh) \
     && apt clean
 
-# VNC Password (123456)
-RUN mkdir -p /root/.vnc && \
-    echo "123456" | vncpasswd -f > /root/.vnc/passwd && \
-    chmod 600 /root/.vnc/passwd
+# Cloudflare Tunnel ඉන්ස්ටෝල් කිරීම
+RUN wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb \
+    && dpkg -i cloudflared-linux-amd64.deb
 
-# Startup Script
+# Acme.sh ඉන්ස්ටෝල් කිරීම (SSL ගන්න පාවිච්චි කරන්නේ මේකයි)
+RUN curl https://get.acme.sh | sh -s email=my@example.com
+
+# Startup Script එක
+# මෙතන $PORT පාවිච්චි කරන්නේ Railway එකේ dynamic port එකට සෙට් වෙන්න
 RUN echo '#!/bin/bash\n\
-rm -rf /tmp/.X*\n\
-vncserver :1 -geometry 1280x720 -depth 24\n\
-# Tmate පණගන්වනවා ලෝකේ ඕනෑම තැනක ඉඳන් ලොග් වෙන්න\n\
-tmate -S /tmp/tmate.sock new-session -d\n\
-tmate -S /tmp/tmate.sock wait tmate-ready\n\
-tmate -S /tmp/tmate.sock display -p "#{tmate_ssh}"\n\
-tail -f /dev/null' > /entrypoint.sh && chmod +x /entrypoint.sh
+/usr/local/x-ui/x-ui start\n\
+echo "3X-UI Started."\n\
+\n\
+# උඹට menu එකේ 19 ගිහින් කරන්න ඕන දේ (SSL certificate එක install කරන එක)\n\
+# ඒක පැනල් එක ඇතුළෙන්ම කරන්න පුළුවන් නිසා අපි Cloudflare Tunnel එක run කරමු\n\
+echo "Starting Cloudflare Tunnel..."\n\
+cloudflared tunnel --url http://localhost:2053' > /entrypoint.sh && chmod +x /entrypoint.sh
 
-EXPOSE 8080
+EXPOSE 2053
+
 CMD ["/bin/bash", "/entrypoint.sh"]
