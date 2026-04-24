@@ -1,33 +1,36 @@
-FROM ubuntu:22.04
+FROM debian:11-slim
 
 # ENV variables සෙට් කිරීම
 ENV DEBIAN_FRONTEND=noninteractive
 ENV USER=root
 ENV DISPLAY=:1
 
-# අවශ්‍ය ටූල්ස් ඉන්ස්ටෝල් කිරීම (Firefox සහ Desktop ඇතුළුව)
+# අත්‍යවශ්‍ය ටූල්ස් සහ Browser දෙක (Chrome + Firefox) ඉන්ස්ටෝල් කිරීම
 RUN apt update && apt install -y \
-    xfce4 xfce4-goodies \
-    tightvncserver \
-    novnc websockify \
-    firefox \
-    wget curl && \
-    apt clean
+    xfce4 xfce4-terminal \
+    tightvncserver novnc websockify \
+    wget curl ca-certificates procps \
+    firefox-esr \
+    # Google Chrome ඉන්ස්ටෝල් කිරීම
+    && wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+    && apt install -y ./google-chrome-stable_current_amd64.deb \
+    && rm google-chrome-stable_current_amd64.deb \
+    && apt clean
 
-# VNC Password එක සෙට් කිරීම (පාස්වර්ඩ් එක: 123456)
+# VNC Password එක (123456)
 RUN mkdir -p ~/.vnc && \
     echo "123456" | vncpasswd -f > ~/.vnc/passwd && \
     chmod 600 ~/.vnc/passwd
 
-# Startup Script එක ඇතුළතදීම ලිවීම
+# Startup Script එක
+# Chrome එක Root විදිහට දුවන්න '--no-sandbox' අවශ්‍යයි
 RUN echo '#!/bin/bash\n\
-rm -rf /tmp/.X1-lock /tmp/.X11-unix/X1\n\
+rm -rf /tmp/.X*\n\
 vncserver :1 -geometry 1280x720 -depth 24\n\
-websockify --web /usr/share/novnc/ 8080 localhost:5901\n\
-' > /entrypoint.sh && chmod +x /entrypoint.sh
+websockify --web /usr/share/novnc/ 8080 localhost:5901 &\n\
+echo "RDP is Ready! Open your link and add /vnc.html"\n\
+tail -f /dev/null' > /entrypoint.sh && chmod +x /entrypoint.sh
 
-# Railway පෝර්ට් එක
 EXPOSE 8080
 
-# සර්වර් එක දිගටම රන් වෙන්න දාන කමාන්ඩ් එක
-CMD ["/entrypoint.sh"]
+CMD ["/bin/bash", "/entrypoint.sh"]
