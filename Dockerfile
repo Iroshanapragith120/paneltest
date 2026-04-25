@@ -7,18 +7,13 @@ RUN apt-get update && apt-get install -y \
     curl \
     wget \
     net-tools \
-    openssh-server \
-    && apt-get clean
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Tor config - SOCKS5 proxy 9050 port එකේ
-RUN echo "SocksPort 0.0.0.0:9050" >> /etc/tor/torrc && \
-    echo "RunAsDaemon 0" >> /etc/tor/torrc
+# Tor config - SOCKS5 proxy 0.0.0.0:9050
+RUN echo "SocksPort 0.0.0.0:9050" > /etc/tor/torrc && \
+    echo "RunAsDaemon 0" >> /etc/tor/torrc && \
+    echo "DataDirectory /tmp/tor" >> /etc/tor/torrc
 
-# SSH enable කරන්න - Railway Web Terminal එකට
-RUN mkdir /var/run/sshd && \
-    echo 'root:root' | chpasswd && \
-    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+EXPOSE 9050
 
-EXPOSE 9050 22
-
-CMD service tor start && /usr/sbin/sshd -D
+CMD tor
