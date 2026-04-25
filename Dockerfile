@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y \
     websockify \
     firefox \
     xfonts-base \
+    dbus-x11 \
     --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -29,15 +30,11 @@ RUN mkdir -p /home/$USERNAME/.vnc && \
     echo $PASSWORD | vncpasswd -f > /home/$USERNAME/.vnc/passwd && \
     chmod 600 /home/$USERNAME/.vnc/passwd
 
-RUN echo '#!/bin/bash\nunset SESSION_MANAGER\nunset DBUS_SESSION_BUS_ADDRESS\nopenbox-session &' > /home/$USERNAME/.vnc/xstartup && \
+# මෙන්න Fix එක - xstartup එක හරියට
+RUN printf '#!/bin/bash\nunset SESSION_MANAGER\nunset DBUS_SESSION_BUS_ADDRESS\nexport XDG_RUNTIME_DIR=/tmp/runtime-$USER\nexport DBUS_SESSION_BUS_ADDRESS=unix:path=/tmp/dbus-$USER\nmkdir -p $XDG_RUNTIME_DIR\nchmod 700 $XDG_RUNTIME_DIR\ndbus-daemon --session --address=$DBUS_SESSION_BUS_ADDRESS --fork\nopenbox &\nfirefox &\nxterm &\nwait\n' > /home/$USERNAME/.vnc/xstartup && \
     chmod +x /home/$USERNAME/.vnc/xstartup
-
-RUN mkdir -p /home/$USERNAME/.config/openbox && \
-    echo 'firefox &' > /home/$USERNAME/.config/openbox/autostart && \
-    echo 'xterm &' >> /home/$USERNAME/.config/openbox/autostart
 
 USER root
 EXPOSE 6080
 
-# Fix එක: SecurityTypes VncAuth දාලා localhost no දානවා
 CMD ["bash", "-c", "rm -f /tmp/.X1-lock /tmp/.X11-unix/X1; su - $USERNAME -c 'vncserver :1 -geometry 800x600 -depth 16 -localhost no -SecurityTypes VncAuth' && websockify --web=/usr/share/novnc/ 6080 localhost:5901 && tail -f /dev/null"]
