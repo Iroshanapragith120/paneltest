@@ -39,4 +39,5 @@ RUN mkdir -p /home/$USERNAME/.config/openbox && \
 USER root
 EXPOSE 6080
 
-CMD ["bash", "-c", "rm -f /tmp/.X1-lock /tmp/.X11-unix/X1; su - $USERNAME -c 'vncserver :1 -geometry 800x600 -depth 16 -SecurityTypes None -localhost no' && websockify --web=/usr/share/novnc/ 6080 localhost:5901 && tail -f /dev/null"]
+# Fix එක: SecurityTypes VncAuth දාලා localhost no දානවා
+CMD ["bash", "-c", "rm -f /tmp/.X1-lock /tmp/.X11-unix/X1; su - $USERNAME -c 'vncserver :1 -geometry 800x600 -depth 16 -localhost no -SecurityTypes VncAuth' && websockify --web=/usr/share/novnc/ 6080 localhost:5901 && tail -f /dev/null"]
