@@ -14,10 +14,12 @@ RUN apt update && apt install -y \
     wget \
     novnc \
     websockify \
+    libdbus-glib-1-2 \
+    libgtk-3-0 \
     && apt clean
 
-# Install Tor Browser
-RUN wget -O /tmp/tor.tar.xz https://www.torproject.org/dist/torbrowser/13.5.1/tor-browser-linux-x86_64-13.5.1.tar.xz \
+# Install Tor Browser - Updated to 14.5.3
+RUN wget -O /tmp/tor.tar.xz https://www.torproject.org/dist/torbrowser/14.5.3/tor-browser-linux-x86_64-14.5.3.tar.xz \
     && tar -xf /tmp/tor.tar.xz -C /opt \
     && mv /opt/tor-browser /opt/tor \
     && ln -s /opt/tor/Browser/start-tor-browser /usr/local/bin/tor-browser \
@@ -39,7 +41,7 @@ RUN echo '#!/bin/bash\nxrdb $HOME/.Xresources\nstartxfce4 &' > /home/$USERNAME/.
 
 # Desktop shortcuts
 RUN mkdir -p /home/$USERNAME/Desktop && \
-    echo '[Desktop Entry]\nVersion=1.0\nType=Application\nName=Tor Browser\nComment=Browse with Tor\nExec=/opt/tor/Browser/start-tor-browser --detach\nIcon=/opt/tor/Browser/browser/chrome/icons/default/default128.png\nTerminal=false' > /home/$USERNAME/Desktop/Tor.desktop && \
+    echo '[Desktop Entry]\nVersion=1.0\nType=Application\nName=Tor Browser\nComment=Browse with Tor\nExec=/opt/tor/Browser/start-tor-browser --detach\nIcon=/opt/tor/Browser/browser/chrome/icons/default128.png\nTerminal=false' > /home/$USERNAME/Desktop/Tor.desktop && \
     echo '[Desktop Entry]\nVersion=1.0\nType=Application\nName=Firefox\nExec=firefox\nIcon=firefox\nTerminal=false' > /home/$USERNAME/Desktop/Firefox.desktop && \
     chmod +x /home/$USERNAME/Desktop/*.desktop
 
