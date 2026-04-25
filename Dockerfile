@@ -8,31 +8,24 @@ RUN apt update && apt install -y \
     xfce4 xfce4-goodies \
     tightvncserver \
     dbus-x11 \
-    x11-utils \
-    xfonts-base \
-    firefox \
     wget \
     novnc \
     websockify \
-    libdbus-glib-1-2 \
-    libgtk-3-0 \
-    libx11-xcb1 \
-    libxt6 \
-    libxcomposite1 \
-    libasound2 \
-    libxdamage1 \
-    libxrandr2 \
-    libgbm1 \
+    curl \
+    software-properties-common \
+    apt-transport-https \
+    ca-certificates \
+    gnupg \
     libnss3 \
+    libxss1 \
+    libasound2 \
     && apt clean
 
-# Install Tor Browser - Auto latest version
-RUN TBB_VERSION=$(wget -qO- https://aus1.torproject.org/torbrowser/update_3/release/Linux_x86_64-gcc3/x/en-US | grep -oP 'version="\K[^"]+') \
-    && wget -O /tmp/tor.tar.xz https://www.torproject.org/dist/torbrowser/${TBB_VERSION}/tor-browser-linux-x86_64-${TBB_VERSION}.tar.xz \
-    && tar -xf /tmp/tor.tar.xz -C /opt \
-    && mv /opt/tor-browser /opt/tor \
-    && ln -s /opt/tor/Browser/start-tor-browser /usr/local/bin/tor-browser \
-    && rm /tmp/tor.tar.xz
+# Install Brave Browser
+RUN curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main" | tee /etc/apt/sources.list.d/brave-browser-release.list \
+    && apt update \
+    && apt install -y brave-browser
 
 RUN useradd -m -s /bin/bash $USERNAME && \
     echo "$USERNAME:$PASSWORD" | chpasswd && \
@@ -48,10 +41,10 @@ RUN mkdir -p /home/$USERNAME/.vnc && \
 RUN echo '#!/bin/bash\nxrdb $HOME/.Xresources\nstartxfce4 &' > /home/$USERNAME/.vnc/xstartup && \
     chmod +x /home/$USERNAME/.vnc/xstartup
 
-# Desktop shortcuts
+# Desktop shortcut for Brave with Tor
 RUN mkdir -p /home/$USERNAME/Desktop && \
-    echo '[Desktop Entry]\nVersion=1.0\nType=Application\nName=Tor Browser\nComment=Browse with Tor\nExec=/opt/tor/Browser/start-tor-browser --detach\nIcon=/opt/tor/Browser/browser/chrome/icons/default128.png\nTerminal=false' > /home/$USERNAME/Desktop/Tor.desktop && \
-    echo '[Desktop Entry]\nVersion=1.0\nType=Application\nName=Firefox\nExec=firefox\nIcon=firefox\nTerminal=false' > /home/$USERNAME/Desktop/Firefox.desktop && \
+    echo '[Desktop Entry]\nVersion=1.0\nType=Application\nName=Brave Tor\nComment=Brave with Tor\nExec=brave-browser --no-sandbox --tor\nIcon=brave-browser\nTerminal=false' > /home/$USERNAME/Desktop/Brave-Tor.desktop && \
+    echo '[Desktop Entry]\nVersion=1.0\nType=Application\nName=Brave Normal\nComment=Brave Normal\nExec=brave-browser --no-sandbox\nIcon=brave-browser\nTerminal=false' > /home/$USERNAME/Desktop/Brave.desktop && \
     chmod +x /home/$USERNAME/Desktop/*.desktop
 
 USER root
