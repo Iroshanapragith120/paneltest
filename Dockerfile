@@ -1,14 +1,19 @@
 FROM kasmweb/tor-browser:1.14.0
 
-# 1. Railway එකට ඕන Port එක කියනවා
-ENV PORT=6901
-EXPOSE 6901
+USER root
 
-# 2. Login Password Set කරනවා
+# 1. Railway එකට ඕන Port එක ENV එකෙන් ගන්නවා
+ENV PORT=8080
 ENV VNC_PW=password
-
-# 3. Quality Settings - ඕන නම් වෙනස් කරපන්
 ENV VNC_RESOLUTION=1280x720
-ENV MAX_FRAME_RATE=24
+
+# 2. Kasm එකේ Port එක 8080 ට මාරු කරනවා
+RUN sed -i 's/6901/8080/g' /etc/nginx/sites-available/default && \
+    sed -i 's/6901/8080/g' /dockerstartup/vnc_startup.sh
+
+EXPOSE 8080
 
 USER 1000
+
+# 3. Start command එක Force කරනවා
+CMD ["/dockerstartup/kasm_default_profile.sh", "/dockerstartup/vnc_startup.sh", "--wait"]
