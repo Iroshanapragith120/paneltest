@@ -1,31 +1,49 @@
-FROM debian:11-slim
+FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV USERNAME=ubuntu
+ENV PASSWORD=123456
 
-# අවශ්‍ය ටූල්ස් ටික විතරක් දාමු
 RUN apt update && apt install -y \
-    curl wget procps ca-certificates tar \
+    xfce4 xfce4-goodies \
+    tightvncserver \
+    dbus-x11 \
+    x11-utils \
+    xfonts-base \
+    firefox \
+    wget \
+    novnc \
+    websockify \
     && apt clean
 
-# 3X-UI අතින් (Manual) බාගෙන සෙට් කරමු (Script එක නැතුව)
-RUN mkdir -p /usr/local/x-ui && \
-    curl -Ls https://github.com/mhsanaei/3x-ui/releases/latest/download/x-ui-linux-amd64.tar.gz -o /tmp/x-ui.tar.gz && \
-    tar zxvf /tmp/x-ui.tar.gz -C /usr/local/ && \
-    rm /tmp/x-ui.tar.gz
+# Install Tor Browser
+RUN wget -O /tmp/tor.tar.xz https://www.torproject.org/dist/torbrowser/13.5.1/tor-browser-linux-x86_64-13.5.1.tar.xz \
+    && tar -xf /tmp/tor.tar.xz -C /opt \
+    && mv /opt/tor-browser /opt/tor \
+    && ln -s /opt/tor/Browser/start-tor-browser /usr/local/bin/tor-browser \
+    && rm /tmp/tor.tar.xz
 
-# Cloudflare Tunnel දාමු (Port ප්‍රශ්න නැති වෙන්න)
-RUN wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb && \
-    dpkg -i cloudflared-linux-amd64.deb
+RUN useradd -m -s /bin/bash $USERNAME && \
+    echo "$USERNAME:$PASSWORD" | chpasswd && \
+    usermod -aG sudo $USERNAME
 
-WORKDIR /usr/local/x-ui
+USER $USERNAME
+WORKDIR /home/$USERNAME
 
-# සර්වර් එක පණගන්වන Script එක
-RUN echo '#!/bin/bash\n\
-./x-ui &\n\
-echo "Waiting for Panel..."\n\
-sleep 5\n\
-cloudflared tunnel --url http://localhost:2053' > /entrypoint.sh && chmod +x /entrypoint.sh
+RUN mkdir -p /home/$USERNAME/.vnc && \
+    echo $PASSWORD | vncpasswd -f > /home/$USERNAME/.vnc/passwd && \
+    chmod 600 /home/$USERNAME/.vnc/passwd
 
-EXPOSE 2053
+RUN echo '#!/bin/bash\nxrdb $HOME/.Xresources\nstartxfce4 &' > /home/$USERNAME/.vnc/xstartup && \
+    chmod +x /home/$USERNAME/.vnc/xstartup
 
-CMD ["/bin/bash", "/entrypoint.sh"]
+# Desktop shortcuts
+RUN mkdir -p /home/$USERNAME/Desktop && \
+    echo '[Desktop Entry]\nVersion=1.0\nType=Application\nName=Tor Browser\nComment=Browse with Tor\nExec=/opt/tor/Browser/start-tor-browser --detach\nIcon=/opt/tor/Browser/browser/chrome/icons/default/default128.png\nTerminal=false' > /home/$USERNAME/Desktop/Tor.desktop && \
+    echo '[Desktop Entry]\nVersion=1.0\nType=Application\nName=Firefox\nExec=firefox\nIcon=firefox\nTerminal=false' > /home/$USERNAME/Desktop/Firefox.desktop && \
+    chmod +x /home/$USERNAME/Desktop/*.desktop
+
+USER root
+EXPOSE 6080
+
+CMD bash -c "su - $USERNAME -c 'vncserver :1 -geometry 1024x768 -depth 24' && websockify --web=/usr/share/novnc/ 6080 localhost:5901 && tail -f /dev/null"
