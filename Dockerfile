@@ -16,10 +16,19 @@ RUN apt update && apt install -y \
     websockify \
     libdbus-glib-1-2 \
     libgtk-3-0 \
+    libx11-xcb1 \
+    libxt6 \
+    libxcomposite1 \
+    libasound2 \
+    libxdamage1 \
+    libxrandr2 \
+    libgbm1 \
+    libnss3 \
     && apt clean
 
-# Install Tor Browser - Updated to 14.5.3
-RUN wget -O /tmp/tor.tar.xz https://www.torproject.org/dist/torbrowser/14.5.3/tor-browser-linux-x86_64-14.5.3.tar.xz \
+# Install Tor Browser - Auto latest version
+RUN TBB_VERSION=$(wget -qO- https://aus1.torproject.org/torbrowser/update_3/release/Linux_x86_64-gcc3/x/en-US | grep -oP 'version="\K[^"]+') \
+    && wget -O /tmp/tor.tar.xz https://www.torproject.org/dist/torbrowser/${TBB_VERSION}/tor-browser-linux-x86_64-${TBB_VERSION}.tar.xz \
     && tar -xf /tmp/tor.tar.xz -C /opt \
     && mv /opt/tor-browser /opt/tor \
     && ln -s /opt/tor/Browser/start-tor-browser /usr/local/bin/tor-browser \
