@@ -4,25 +4,28 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV USERNAME=ubuntu
 ENV PASSWORD=123456
 
-# අවශ්‍යම දේවල් විතරයි
+# Minimal + Brave install
 RUN apt update && apt install -y \
     openbox \
     xterm \
-    firefox-esr \
     tightvncserver \
     novnc \
     websockify \
-    wget \
+    curl \
+    software-properties-common \
+    apt-transport-https \
+    ca-certificates \
+    gnupg \
     --no-install-recommends \
     && apt clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Tor Browser latest auto install
-RUN TBB_VERSION=$(wget -qO- https://aus1.torproject.org/torbrowser/update_3/release/Linux_x86_64-gcc3/x/en-US 2>/dev/null | grep -oP 'version="\K[^"]+' || echo "14.5.4") \
-    && wget -q -O /tmp/tor.tar.xz https://www.torproject.org/dist/torbrowser/${TBB_VERSION}/tor-browser-linux-x86_64-${TBB_VERSION}.tar.xz \
-    && tar -xf /tmp/tor.tar.xz -C /opt \
-    && mv /opt/tor-browser /opt/tor \
-    && rm /tmp/tor.tar.xz
+# Install Brave Browser
+RUN curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main" | tee /etc/apt/sources.list.d/brave-browser-release.list \
+    && apt update \
+    && apt install -y brave-browser \
+    && apt clean
 
 RUN useradd -m -s /bin/bash $USERNAME && \
     echo "$USERNAME:$PASSWORD" | chpasswd && \
@@ -35,9 +38,9 @@ RUN mkdir -p /home/$USERNAME/.vnc && \
     echo $PASSWORD | vncpasswd -f > /home/$USERNAME/.vnc/passwd && \
     chmod 600 /home/$USERNAME/.vnc/passwd
 
-# Openbox config - Firefox auto start
+# Auto start Brave with Tor mode
 RUN mkdir -p /home/$USERNAME/.config/openbox && \
-    echo 'firefox-esr &' > /home/$USERNAME/.config/openbox/autostart && \
+    echo 'brave-browser --no-sandbox --tor &' > /home/$USERNAME/.config/openbox/autostart && \
     echo 'xterm &' >> /home/$USERNAME/.config/openbox/autostart
 
 RUN echo '#!/bin/bash\nopenbox-session &' > /home/$USERNAME/.vnc/xstartup && \
